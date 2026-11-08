@@ -26,6 +26,20 @@ services:
       - caddy_config:/config
     depends_on:
       - web
+  https-lan:
+    image: caddy:2-alpine
+    profiles: ["lan-https"]
+    restart: unless-stopped
+    ports:
+      - "${LAN_HTTPS_PORT:-8443}:443"
+    environment:
+      WEB_DOMAIN: ${WEB_DOMAIN:-notes.example.com}
+    volumes:
+      - ./Caddyfile.lan:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
 volumes:
   caddy_data:
   caddy_config:

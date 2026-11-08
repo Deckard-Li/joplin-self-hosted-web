@@ -1,0 +1,4 @@
+https://{$WEB_DOMAIN} {
+	tls internal
+	reverse_proxy web:8080
+}

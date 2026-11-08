@@ -17,6 +17,22 @@ When updating an existing deployment, run `git pull` followed by `docker compose
 
 An optional Caddy HTTPS service is included. Set `WEB_DOMAIN` to a domain pointing at this host, make ports 80 and 443 reachable and available, and run `docker compose --profile https up --build -d`. Caddy obtains and renews a public TLS certificate. If you already have a reverse proxy, use that instead and leave this profile disabled. An IP-only private LAN deployment needs a certificate trusted by your browsers; the included public-certificate configuration does not set up a private certificate authority.
 
+## HTTPS On A Private LAN
+
+Use the separate `lan-https` profile when accessing the app by a private IP or local hostname. In `.env`, set `WEB_DOMAIN` to the Docker host's LAN IP or hostname, without a scheme, port, or path (for example `192.168.1.20`), and set `LAN_HTTPS_PORT=8443` or another available port. Leave `JOPLIN_SERVER_URL` pointing to your existing backend. Do not enable the public `https` profile at the same time.
+
+On the deployment machine, run:
+
+```sh
+git pull
+docker compose --profile lan-https up --build -d web https-lan
+docker compose --profile lan-https cp https-lan:/data/caddy/pki/authorities/local/root.crt ./joplin-web-lan-root.crt
+```
+
+Wait until Caddy has started before copying the certificate; `docker compose logs https-lan` shows any startup errors. Caddy creates and persists a private certificate authority in the `caddy_data` volume. Transfer only `joplin-web-lan-root.crt` securely from your own deployment host to each client device and explicitly trust it in the OS or browser's trusted root certificate store. For Windows, you can run `certutil -user -addstore Root .\joplin-web-lan-root.crt` yourself; browsers using their own certificate store may also need an import there. Never distribute the CA's private key or import a root from an untrusted source. Remove this trust when you no longer use the deployment.
+
+Restart the browser and open `https://192.168.1.20:8443`, substituting your configured host and port. Do not use the old HTTP URL or merely bypass a certificate warning. In the browser console, `window.isSecureContext` and `window.crossOriginIsolated` should both be `true`. Keep the URL stable to preserve the browser's local note profile; changing from HTTP to HTTPS creates a new profile that needs to synchronise again. Configure the app's Joplin Server URL as `https://192.168.1.20:8443/joplin`.
+
 ## Connect And Review Notes
 
 1. Open the web app's settings and the Synchronisation section.

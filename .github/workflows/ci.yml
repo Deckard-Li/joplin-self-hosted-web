@@ -13,7 +13,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: docker compose config --quiet
+      - run: docker compose --profile https --profile lan-https config --quiet
         env:
           JOPLIN_SERVER_URL: http://127.0.0.1:22300
+      - run: docker run --rm -e WEB_DOMAIN=192.168.1.20 -v "$PWD/Caddyfile.lan:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
       - run: docker build -t joplin-self-hosted-web:test .

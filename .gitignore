@@ -1,6 +1,7 @@
 node_modules/
 .cache/
 .env
+joplin-web-lan-root.crt
 *.log
 test-results/
 playwright-report/
