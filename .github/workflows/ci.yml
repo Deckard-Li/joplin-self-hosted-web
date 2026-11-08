@@ -13,8 +13,29 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: sh -n tools/deploy.sh && shellcheck tools/deploy.sh
       - run: docker compose --profile https --profile lan-https config --quiet
         env:
           JOPLIN_SERVER_URL: http://127.0.0.1:22300
       - run: docker run --rm -e WEB_DOMAIN=192.168.1.20 -v "$PWD/Caddyfile.lan:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
       - run: docker build -t joplin-self-hosted-web:test .
+      - name: Verify portable LAN deployment and trusted TLS without SNI
+        run: |
+          for host in 127.0.0.1 localhost; do
+            sh tools/deploy.sh lan "$host" http://127.0.0.1:22300 18443
+            curl --noproxy '*' --cacert ./joplin-web-lan-root.crt --fail --silent --show-error -I "https://$host:18443/" > /tmp/joplin-web-headers
+            grep -qi 'cross-origin-opener-policy: same-origin' /tmp/joplin-web-headers
+            grep -qi 'cross-origin-embedder-policy: require-corp' /tmp/joplin-web-headers
+            if [ "$host" = 127.0.0.1 ]; then
+              openssl s_client -connect 127.0.0.1:18443 -noservername -verify_ip 127.0.0.1 -verify_return_error -CAfile ./joplin-web-lan-root.crt </dev/null
+              cp ./joplin-web-lan-root.crt /tmp/joplin-web-first-root.crt
+            else
+              cmp /tmp/joplin-web-first-root.crt ./joplin-web-lan-root.crt
+            fi
+          done
+      - name: Deployment logs
+        if: failure()
+        run: docker compose --env-file .env.deploy --profile lan-https logs --tail=80
+      - name: Stop deployment
+        if: always()
+        run: docker compose --env-file .env.deploy --profile lan-https down

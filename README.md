@@ -6,18 +6,59 @@ The official hosted web app deliberately limits sync choices on `https://app.jop
 
 ## Deploy With Docker
 
+### One-command HTTPS Setup
+
+Install Docker Engine with Docker Compose v2 on a Linux deployment host, clone this repository, and run one of these commands from its directory. No Node.js installation or manual Caddy edits are needed. Use `sudo sh` instead of `sh` if your user does not have Docker access.
+
+For a private LAN, supply the host's IPv4 address or DNS hostname, your existing Joplin Server URL, and optionally an available HTTPS port:
+
+```sh
+sh tools/deploy.sh lan 192.168.1.20 http://192.168.1.20:22300 8443
+```
+
+For public HTTPS, supply a real DNS hostname pointing to this host and make ports 80 and 443 reachable:
+
+```sh
+sh tools/deploy.sh public notes.example.com https://joplin.example.com
+```
+
+Replace these example addresses with your deployment's addresses. The command builds and starts the original web app, recreates the chosen HTTPS proxy, saves settings in `.env.deploy`, and prints the exact web and synchronisation URLs. It stops the alternative HTTPS proxy when switching modes. The underlying HTTP web port is restricted to the Docker host's loopback interface. Set `WEB_PORT` before running the command if another application already uses port 8080. The backend URL must be reachable from inside Docker; `localhost` does not refer to the host.
+
+**Public HTTPS needs no certificate import. Private LAN HTTPS requires a one-time trust import on every client device.** The LAN command automatically exports `joplin-web-lan-root.crt`. Transfer only that public certificate securely from your own host to the client, then run this on Windows in the certificate's directory:
+
+```powershell
+certutil -user -addstore Root .\joplin-web-lan-root.crt
+```
+
+On Ubuntu clients, install the public root with:
+
+```sh
+sudo cp ./joplin-web-lan-root.crt /usr/local/share/ca-certificates/joplin-web-lan-root.crt
+sudo update-ca-certificates
+```
+
+Trust is needed on the device running the browser, not just the Docker server. Browsers with a separate certificate store may need a separate import. Restart the browser after importing, then open the printed HTTPS URL without bypassing warnings. A private CA cannot safely make other devices trust it automatically. For deployments where client imports are unacceptable, use public HTTPS or your organisation's already-trusted HTTPS proxy.
+
+To update or reinstall after removing Docker images, run `git pull` and rerun your setup command. **Keep the `caddy_data` volume:** it retains the CA, so updates and image removal do not require another trust import. A new deployment with a new CA requires its own trust import. No fixed IP is embedded in the configuration; `WEB_DOMAIN` controls both the certificate and the fallback for clients that omit TLS SNI.
+
+The original web UI still needs its normal one-time synchronisation settings: select **Joplin Server**, enter the printed sync URL, and enter your account credentials. They are not passed to the setup command or stored in deployment files.
+
+### Manual Or Existing Reverse Proxy
+
 1. Clone this repository and copy `.env.example` to `.env`.
 2. Set `JOPLIN_SERVER_URL` to the base URL of your existing Joplin Server, including any reverse-proxy path prefix. The container must be able to reach this URL. `localhost` inside the container refers to the container, not your host.
 3. Run `docker compose up --build -d`.
 4. On the Docker host, open `http://localhost:8080`. For remote or LAN access, put an HTTPS reverse proxy in front of this web container; preserve the original `Host` header and forward every path, including `/joplin/`.
 
-The web port is published on all host interfaces at `WEB_PORT` (default `8080`). Restrict this port to your trusted LAN or reverse proxy with a firewall. If your reverse proxy runs directly on the Docker host, you can limit the port mapping to `127.0.0.1:${WEB_PORT:-8080}:8080` instead. An HTTP backend such as `http://192.168.1.20:22300` is supported: the browser calls the web app's same-origin `/joplin/api/` proxy, and the container calls your server. **The frontend itself requires a secure browser context: HTTPS, or localhost for development. Plain HTTP on a LAN IP is not sufficient for the browser storage and service worker APIs.** HTTP between the web host and backend still exposes credentials and notes on that network; use HTTPS there too when possible.
+Manual deployment publishes the web port on all host interfaces at `WEB_PORT` (default `8080`). Restrict this port to your trusted LAN or reverse proxy with a firewall. If your reverse proxy runs directly on the Docker host, set `WEB_BIND=127.0.0.1` in `.env`. An HTTP backend such as `http://192.168.1.20:22300` is supported: the browser calls the web app's same-origin `/joplin/api/` proxy, and the container calls your server. **The frontend itself requires a secure browser context: HTTPS, or localhost for development. Plain HTTP on a LAN IP is not sufficient for the browser storage and service worker APIs.** HTTP between the web host and backend still exposes credentials and notes on that network; use HTTPS there too when possible.
 
 When updating an existing deployment, run `git pull` followed by `docker compose up --build -d --force-recreate web` on the Docker host. Run `docker compose port web 8080` to verify that the published address is `0.0.0.0:<WEB_PORT>` (or its IPv6 equivalent), not `127.0.0.1`. `WEB_DOMAIN` configures Caddy's HTTPS site name; it does not control the web port binding.
 
 An optional Caddy HTTPS service is included. Set `WEB_DOMAIN` to a domain pointing at this host, make ports 80 and 443 reachable and available, and run `docker compose --profile https up --build -d`. Caddy obtains and renews a public TLS certificate. If you already have a reverse proxy, use that instead and leave this profile disabled. An IP-only private LAN deployment needs a certificate trusted by your browsers; the included public-certificate configuration does not set up a private certificate authority.
 
 ## HTTPS On A Private LAN
+
+The recommended setup is `sh tools/deploy.sh lan HOST JOPLIN_SERVER_URL [HTTPS_PORT]` above. The following steps are only for manual deployments using `.env`. For a deployment created by the setup command, add `--env-file .env.deploy` to subsequent `docker compose` commands so they use the saved settings.
 
 Use the separate `lan-https` profile when accessing the app by a private IP or local hostname. In `.env`, set `WEB_DOMAIN` to the Docker host's LAN IP or hostname, without a scheme, port, or path (for example `192.168.1.20`), and set `LAN_HTTPS_PORT=8443` or another available port. Leave `JOPLIN_SERVER_URL` pointing to your existing backend. Do not enable the public `https` profile at the same time.
 

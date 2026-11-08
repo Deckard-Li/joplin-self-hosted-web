@@ -1,8 +1,11 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, request as httpRequest } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createWebServer } from './server.mjs';
 
 const listen = async server => {
@@ -11,6 +14,47 @@ const listen = async server => {
 };
 
 describe('Self-hosted Joplin Web', () => {
+	test('deploys portable HTTPS settings and rejects unsafe installer inputs', async context => {
+		const shell = process.platform === 'win32' ? join(process.env.ProgramFiles || 'C:/Program Files', 'Git/bin/sh.exe') : '/bin/sh';
+		try {
+			await access(shell);
+		} catch {
+			context.skip('A POSIX shell is required for the Docker installer test.');
+			return;
+		}
+		const directory = await mkdtemp(join(tmpdir(), 'joplin-deploy-'));
+		context.after(() => rm(directory, { recursive: true, force: true }));
+		await mkdir(join(directory, 'tools'));
+		await mkdir(join(directory, 'bin'));
+		await copyFile(new URL('./tools/deploy.sh', import.meta.url), join(directory, 'tools/deploy.sh'));
+		await writeFile(join(directory, '.env'), 'EXISTING_SETTINGS=preserved\n');
+		await writeFile(join(directory, 'bin/docker'), '#!/bin/sh\nprintf "%s|%s|%s\\n" "$*" "$WEB_DOMAIN" "$WEB_BIND" >> docker-calls\ncase " $* " in\n\t*" cp "*) printf "public-root\\n" > joplin-web-lan-root.crt ;;\nesac\n', { mode: 0o700 });
+		const run = args => spawnSync(shell, ['tools/deploy.sh', ...args], { cwd: directory, encoding: 'utf8', env: { ...process.env, PATH: `${join(directory, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`, WEB_DOMAIN: 'ambient.example.org' } });
+		for (const args of [
+			['lan', 'https://wrong-host', 'http://localhost:22300'],
+			['lan', 'localhost', 'http://user:secret@localhost:22300'],
+			['lan', 'localhost', 'http://localhost:22300?token=value'],
+			['lan', 'localhost', 'http://localhost:22300', '65536'],
+			['public', 'notes.example.com', 'https://joplin.example.com', '8443'],
+		]) assert.equal(run(args).status, 1, args.join(' '));
+		await assert.rejects(readFile(join(directory, 'docker-calls')));
+		for (const host of ['192.168.1.20', 'notes.lan']) {
+			const result = run(['lan', host, 'http://backend.lan:22300/prefix', '22443']);
+			assert.equal(result.status, 0, result.stderr);
+			assert.match(result.stdout, new RegExp(`https://${host.replaceAll('.', '\\.')}:22443/joplin`));
+			assert.match(await readFile(join(directory, '.env.deploy'), 'utf8'), new RegExp(`WEB_DOMAIN=${host.replaceAll('.', '\\.')}\n`));
+		}
+		assert.equal(await readFile(join(directory, '.env'), 'utf8'), 'EXISTING_SETTINGS=preserved\n');
+		assert.equal(await readFile(join(directory, 'joplin-web-lan-root.crt'), 'utf8'), 'public-root\n');
+		const publicResult = run(['public', 'notes.example.com', 'https://backend.example.com']);
+		assert.equal(publicResult.status, 0, publicResult.stderr);
+		assert.match(publicResult.stdout, /https:\/\/notes\.example\.com\/joplin/);
+		const calls = await readFile(join(directory, 'docker-calls'), 'utf8');
+		assert.match(calls, /--wait --wait-timeout 180 --force-recreate web https-lan/);
+		assert.match(calls, /--force-recreate web https\|notes\.example\.com\|127\.0\.0\.1/);
+		assert.doesNotMatch(calls, /--env-file[^\n]*ambient\.example\.org|down -v/);
+	});
+
 	test('proxies HTTP sync requests with path prefixes, body and session headers', async context => {
 		const backend = createServer(async (request, response) => {
 			assert.equal(request.url, '/prefix/api/sessions?test=1');

@@ -1,6 +1,7 @@
 node_modules/
 .cache/
 .env
+.env.deploy
 joplin-web-lan-root.crt
 *.log
 test-results/
