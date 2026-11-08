@@ -31,7 +31,7 @@ services:
     profiles: ["lan-https"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "test -s /data/caddy/pki/authorities/local/root.crt && wget -q -O /dev/null http://localhost:2019/config/"]
+      test: ["CMD-SHELL", "test -s /data/caddy/pki/authorities/local/root.crt && wget -q -O /dev/null http://127.0.0.1:2019/config/"]
       interval: 2s
       timeout: 5s
       retries: 30

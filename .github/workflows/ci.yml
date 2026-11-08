@@ -35,7 +35,9 @@ jobs:
           done
       - name: Deployment logs
         if: failure()
-        run: docker compose --env-file .env.deploy --profile lan-https logs --tail=80
+        run: |
+          docker compose --env-file .env.deploy --profile lan-https logs --tail=80
+          docker inspect --format '{{json .State.Health}}' "$(docker compose --env-file .env.deploy ps -q https-lan)"
       - name: Stop deployment
         if: always()
         run: docker compose --env-file .env.deploy --profile lan-https down
