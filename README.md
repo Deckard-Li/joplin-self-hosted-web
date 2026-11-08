@@ -4,6 +4,8 @@ An unofficial, web-only deployment of the original Joplin Web App, with a same-o
 
 The official hosted web app deliberately limits sync choices on `https://app.joplincloud.com`. On your own origin, its existing Joplin Server sync target is available. This repository includes the extracted browser build, so deployment does not rebuild the Joplin monorepo.
 
+**Important:** In the web app's synchronisation settings, use the **web app URL followed by `/joplin`**, not your backend server URL. The backend can remain HTTP while the web app uses HTTPS. See [Configure Synchronisation](#configure-synchronisation) below.
+
 ## Deploy With Docker
 
 ### One-command HTTPS Setup
@@ -41,7 +43,27 @@ Trust is needed on the device running the browser, not just the Docker server. B
 
 To update or reinstall after removing Docker images, run `git pull` and rerun your setup command. **Keep the `caddy_data` volume:** it retains the CA, so updates and image removal do not require another trust import. A new deployment with a new CA requires its own trust import. No fixed IP is embedded in the configuration; `WEB_DOMAIN` controls both the certificate and the fallback for clients that omit TLS SNI.
 
-The original web UI still needs its normal one-time synchronisation settings: select **Joplin Server**, enter the printed sync URL, and enter your account credentials. They are not passed to the setup command or stored in deployment files.
+### Configure Synchronisation
+
+The deployment backend URL and the URL entered inside the web app are **different**. For example:
+
+| Where | URL |
+| --- | --- |
+| Deployment `JOPLIN_SERVER_URL` (your existing backend) | `http://192.168.1.20:22300` |
+| Browser address (the web app) | `https://192.168.1.20:8443` |
+| Joplin Server URL inside the web app | **`https://192.168.1.20:8443/joplin`** |
+
+Replace the example host and ports with yours. Open **Configuration > Synchronisation**, select **Joplin Server**, enter the web app's URL followed by `/joplin`, and enter your existing Joplin Server account credentials. Use exactly the same scheme, hostname/IP, and port as the browser address. The setup command prints this sync URL. Account credentials are not passed to the setup command or stored in deployment files.
+
+Do **not** enter the HTTP backend URL inside the HTTPS web app. The browser can block that direct request as mixed content and report **Failed to fetch**. Instead, the browser calls the HTTPS same-origin `/joplin/api/` proxy, and the web container connects to your configured backend over HTTP or HTTPS. An HTTP backend does not need to be converted to HTTPS for this setup to work, although HTTP traffic between the container and backend is unencrypted.
+
+**If synchronisation reports Failed to fetch:** first check the in-app URL above, then open the web app's URL followed by `/joplin/api/ping` in the same browser, for example `https://192.168.1.20:8443/joplin/api/ping`.
+
+- A successful JSON response confirms the proxy can reach that backend endpoint; it does not verify account credentials or complete synchronisation.
+- A `502` response means the upstream connection failed. Check the deployment's backend URL and container connectivity; `localhost` inside Docker is not the Docker host.
+- A certificate warning means client trust must be fixed. Import your deployment's LAN root on the browser device and restart the browser; do not bypass the warning.
+
+Correcting the sync URL does not require uninstalling the app or clearing local note data.
 
 ### Manual Or Existing Reverse Proxy
 
