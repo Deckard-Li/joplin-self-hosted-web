@@ -1,0 +1,6 @@
+.git
+.env
+node_modules
+tools
+*.test.mjs
+test-results

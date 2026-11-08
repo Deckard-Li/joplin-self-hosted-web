@@ -1,0 +1,9 @@
+# Attribution And Source
+
+This is an unofficial deployment distribution of Joplin Web, derived from Joplin Mobile. Joplin code is copyright Laurent Cozic and contributors and licensed under AGPL-3.0-or-later, unless an upstream component specifies another license. The extracted bundles retain their upstream license notices. This repository does not contain the Joplin desktop client, native Android/iOS build projects, or Joplin Server database implementation.
+
+The upstream compiled application and service worker bundles are distributed unchanged. Web document titles, manifest metadata, standalone application icons, and `environment.js` are adapted. Development mode stays disabled for this production build, including on localhost. The added Node.js hosting/proxy code is licensed under AGPL-3.0-or-later. `upstream-assets.json` records the extraction source and content hashes. Upstream corresponding application source is available at https://github.com/laurent22/joplin; build instructions are at https://github.com/laurent22/joplin/blob/dev/readme/dev/BUILD.md#web. Do not describe this distribution as an independently rebuilt source fork.
+
+Joplin is a trademark of JOPLIN SAS. The original Joplin logos and app icons have a separate restricted license and are not granted by the AGPL. This distribution replaces its standalone web app icons with an independently created document icon. Other third-party notices are retained alongside their bundled JavaScript.
+
+See `SOURCES.md` for the immutable corresponding source of the included browser build and source download links. See `VERIFICATION.md` for tested behavior and remaining deployment checks.

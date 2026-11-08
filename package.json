@@ -1,0 +1,21 @@
+{
+	"name": "joplin-self-hosted-web",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Unofficial self-hosted deployment of the original Joplin Web App",
+	"repository": { "type": "git", "url": "https://github.com/Deckard-Li/joplin-self-hosted-web.git" },
+	"homepage": "https://github.com/Deckard-Li/joplin-self-hosted-web",
+	"license": "AGPL-3.0-or-later",
+	"type": "module",
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"start": "node server.mjs",
+		"test": "node --test server.test.mjs"
+	},
+	"devDependencies": {
+		"acorn": "8.15.0",
+		"parse5": "8.0.0"
+	}
+}

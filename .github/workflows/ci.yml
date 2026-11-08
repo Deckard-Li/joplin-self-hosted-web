@@ -1,0 +1,19 @@
+name: Validate Web Host
+on:
+  push:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: docker compose config --quiet
+        env:
+          JOPLIN_SERVER_URL: http://127.0.0.1:22300
+      - run: docker build -t joplin-self-hosted-web:test .

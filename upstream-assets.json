@@ -1,0 +1,183 @@
+{
+	"source": "https://app.joplincloud.com/",
+	"upstreamVersion": "3.7.0",
+	"upstreamRevision": "425a05ac4b03ab84e038f67a6bcc029377d1b50e",
+	"sourceUrl": "https://github.com/laurent22/joplin/tree/425a05ac4b03ab84e038f67a6bcc029377d1b50e",
+	"extractedAt": "2026-11-08T03:57:23.006Z",
+	"files": [
+		{
+			"path": "index.html",
+			"sourceSha256": "37569fae61781d088eb7040f4ec6255a4d3cd414f74a2475938b0b545292e863",
+			"sha256": "f199ef59e5eb633e32c7b30bd45ecd0e490855e5816bc70876308c9622b6a5a3",
+			"bytes": 1666
+		},
+		{
+			"path": "environment.js",
+			"sourceSha256": "0bc4977ab9eaf2fdf022a93338f14d81ecb61edbdfde90c13e8dafd8adf26c22",
+			"sha256": "a009f1e71d710e52543f25211d641c64d4144d4b60cda6c5d487caf69a1e2b46",
+			"bytes": 313
+		},
+		{
+			"path": "serviceWorker.bundle.js",
+			"sourceSha256": "61661a6205e37424c0d6f668a5ff7d91ca961469c771a8f22e3ca43f7d99e4cf",
+			"sha256": "61661a6205e37424c0d6f668a5ff7d91ca961469c771a8f22e3ca43f7d99e4cf",
+			"bytes": 5204
+		},
+		{
+			"path": "app.bundle.js",
+			"sourceSha256": "98cf0e72865d2002578c93594880ae2a0a1f5efda00855551aa80ab4f72dc86e",
+			"sha256": "98cf0e72865d2002578c93594880ae2a0a1f5efda00855551aa80ab4f72dc86e",
+			"bytes": 18869899
+		},
+		{
+			"path": "index.css",
+			"sourceSha256": "d9c30a7a538728a755adbb48640f2743b33990354c050de720ac86dee2081def",
+			"sha256": "d9c30a7a538728a755adbb48640f2743b33990354c050de720ac86dee2081def",
+			"bytes": 1869
+		},
+		{
+			"path": "manifest.json",
+			"sourceSha256": "32447b570de1bb7c51f83643f02e05cf260eab3fde96f92b8adb1ff03d86bc8a",
+			"sha256": "7b4978d8bc3824303ab5abd58ac1c56d17f1c9b0601e203009c5dfb925a1cbeb",
+			"bytes": 300
+		},
+		{
+			"path": "closed.html",
+			"sourceSha256": "07866c10eeba1e22fe6dec1b5f90e5312f24ec09ac8ee0d293490f0baf2fcd7b",
+			"sha256": "7107e37f533d4f99cf6e4dd723ede871b295933fb18bdc2f7a650cb1b747977f",
+			"bytes": 526
+		},
+		{
+			"path": "just-one-client.html",
+			"sourceSha256": "f79f5223849f5af3451aabc09d17e46e51bd0667ced8f10bd82cba005d5b7d47",
+			"sha256": "175ce19635e047ac6fa1f6f18d780de6ec3c1ed80e550ecefb60a3cf6cc4e54c",
+			"bytes": 2342
+		},
+		{
+			"path": "info-page.css",
+			"sourceSha256": "14ca5d3d8bb4195e18649efce063071a7a0f6c07f40b2a3d5e99fee6928391e2",
+			"sha256": "14ca5d3d8bb4195e18649efce063071a7a0f6c07f40b2a3d5e99fee6928391e2",
+			"bytes": 727
+		},
+		{
+			"path": "serviceWorker.bundle.js.LICENSE.txt",
+			"sourceSha256": "e7cbab807e69ac4fca4880b746069760cf6db668a0b4525e861e228a088343fb",
+			"sha256": "e7cbab807e69ac4fca4880b746069760cf6db668a0b4525e861e228a088343fb",
+			"bytes": 1246
+		},
+		{
+			"path": "77417465d7537e7318eb.png",
+			"sourceSha256": "d17c915d7fce424f0184c2a855fcdc96c212f9cf623d76060fd9a8241a95543a",
+			"sha256": "d17c915d7fce424f0184c2a855fcdc96c212f9cf623d76060fd9a8241a95543a",
+			"bytes": 489
+		},
+		{
+			"path": "d7bbf28d70fcdeded23c.png",
+			"sourceSha256": "442ae5e95fe882a547b0b8ea6bf19aa6860f71e8015dc3b38a034f04aaf6d4fd",
+			"sha256": "442ae5e95fe882a547b0b8ea6bf19aa6860f71e8015dc3b38a034f04aaf6d4fd",
+			"bytes": 325
+		},
+		{
+			"path": "9f9da660ffa323d1f3d6.png",
+			"sourceSha256": "001ab01b58a77e3b683ce6a51135cd03d3de64173bfb489ec26c6421410a7ba2",
+			"sha256": "001ab01b58a77e3b683ce6a51135cd03d3de64173bfb489ec26c6421410a7ba2",
+			"bytes": 459
+		},
+		{
+			"path": "19c372ff1763fb196d48.png",
+			"sourceSha256": "84f62814c02f3b5de24602d1b3b44312ae25b69570a48337c5e5665ad6f251fb",
+			"sha256": "84f62814c02f3b5de24602d1b3b44312ae25b69570a48337c5e5665ad6f251fb",
+			"bytes": 485
+		},
+		{
+			"path": "776172e3164fd63761b6.png",
+			"sourceSha256": "640a612210dd32bd3a3cc8d65a34cf758b4702edba50beb057982f85533cb233",
+			"sha256": "640a612210dd32bd3a3cc8d65a34cf758b4702edba50beb057982f85533cb233",
+			"bytes": 492
+		},
+		{
+			"path": "3e0a463652362cdb49a2.png",
+			"sourceSha256": "bd4bfeb64acbfa5eb04c2591d46a19f3edcd6b49e8c13552fdc0c6c364c78082",
+			"sha256": "bd4bfeb64acbfa5eb04c2591d46a19f3edcd6b49e8c13552fdc0c6c364c78082",
+			"bytes": 414
+		},
+		{
+			"path": "4df5e7af1d8a6b183755.wasm",
+			"sourceSha256": "24f0d645a8e46374ae901227cb737b39701ba9d8c81638cef13254b238624c29",
+			"sha256": "24f0d645a8e46374ae901227cb737b39701ba9d8c81638cef13254b238624c29",
+			"bytes": 938882
+		},
+		{
+			"path": "f20305dee9d396fea5c7.ttf",
+			"sourceSha256": "ef149f08bdd2ff09a4e2c8573476b7b0f3fbb15b623954ade59899e7175bedda",
+			"sha256": "ef149f08bdd2ff09a4e2c8573476b7b0f3fbb15b623954ade59899e7175bedda",
+			"bytes": 356840
+		},
+		{
+			"path": "1fcc36272ea3e53d0031.ttf",
+			"sourceSha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428",
+			"sha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428",
+			"bytes": 1307660
+		},
+		{
+			"path": "40518f95b2e2a69c5c07.ttf",
+			"sourceSha256": "fa2ab7d2557819b2bfe5009e46844efa7170cf177be7735d43aa2ac1295f1d54",
+			"sha256": "fa2ab7d2557819b2bfe5009e46844efa7170cf177be7735d43aa2ac1295f1d54",
+			"bytes": 389724
+		},
+		{
+			"path": "be9ee23c0c6390141475.ttf",
+			"sourceSha256": "af6397503fcefbd613976c21ad5c1e37298c18bbe07d096db03ccd3af6e05ba8",
+			"sha256": "af6397503fcefbd613976c21ad5c1e37298c18bbe07d096db03ccd3af6e05ba8",
+			"bytes": 202744
+		},
+		{
+			"path": "491974d108fe4002b2aa.ttf",
+			"sourceSha256": "e8711bbb871afd8e9dea60e16d30f00c7e4837bbc9807065017475b849fa2313",
+			"sha256": "e8711bbb871afd8e9dea60e16d30f00c7e4837bbc9807065017475b849fa2313",
+			"bytes": 33736
+		},
+		{
+			"path": "527940b104eb2ea366c8.ttf",
+			"sourceSha256": "cda59d6efffa685830fd95b55f64ae9cb51279cd34b2410b69f84c7ec30157d9",
+			"sha256": "cda59d6efffa685830fd95b55f64ae9cb51279cd34b2410b69f84c7ec30157d9",
+			"bytes": 133988
+		},
+		{
+			"path": "665.bundle.js",
+			"sourceSha256": "209ca5a7d95ff5c5bb1a4874346591120f4613213a7eecf875f48f8b7a00f310",
+			"sha256": "209ca5a7d95ff5c5bb1a4874346591120f4613213a7eecf875f48f8b7a00f310",
+			"bytes": 205451
+		},
+		{
+			"path": "528.bundle.js",
+			"sourceSha256": "6861518868da90dd670f812cacf1a15ad08f6f391057b05b85c7a54df0ec7d5f",
+			"sha256": "6861518868da90dd670f812cacf1a15ad08f6f391057b05b85c7a54df0ec7d5f",
+			"bytes": 10952
+		},
+		{
+			"path": "804.bundle.js",
+			"sourceSha256": "7b65ec8b3bf0b67d3682fcbcc3b7a8ebc27baaa9db1125590b797a1415ab7a1e",
+			"sha256": "7b65ec8b3bf0b67d3682fcbcc3b7a8ebc27baaa9db1125590b797a1415ab7a1e",
+			"bytes": 38676
+		},
+		{
+			"path": "app.bundle.js.LICENSE.txt",
+			"sourceSha256": "d09a028922b62a443ed6350578119df4a5f53af3b8cc624739b96e5982a6b64e",
+			"sha256": "d09a028922b62a443ed6350578119df4a5f53af3b8cc624739b96e5982a6b64e",
+			"bytes": 2804
+		},
+		{
+			"path": "794.bundle.js",
+			"sourceSha256": "31d2f559b679f4e8bebc78e19ad7b4f7bb9a390e5384fa3033ea41092c586b17",
+			"sha256": "31d2f559b679f4e8bebc78e19ad7b4f7bb9a390e5384fa3033ea41092c586b17",
+			"bytes": 367091
+		},
+		{
+			"path": "794.bundle.js.LICENSE.txt",
+			"sourceSha256": "32acbbbcf9133c94409c7f982c93572e16b2daddefdd9db99554c3a2612986aa",
+			"sha256": "32acbbbcf9133c94409c7f982c93572e16b2daddefdd9db99554c3a2612986aa",
+			"bytes": 255
+		}
+	]
+}

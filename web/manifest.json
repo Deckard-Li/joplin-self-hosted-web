@@ -1,0 +1,16 @@
+{
+	"short_name": "Notes",
+	"name": "Joplin Web - Unofficial Self-hosted",
+	"icons": [
+		{
+			"src": "./self-hosted-icon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		}
+	],
+	"screenshots": [],
+	"start_url": "./",
+	"background_color": "#3333a5",
+	"display": "standalone"
+}
