@@ -74,6 +74,45 @@ Wait until Caddy has started before copying the certificate; `docker compose log
 
 Restart the browser and open `https://192.168.1.20:8443`, substituting your configured host and port. Do not use the old HTTP URL or merely bypass a certificate warning. In the browser console, `window.isSecureContext` and `window.crossOriginIsolated` should both be `true`. Keep the URL stable to preserve the browser's local note profile; changing from HTTP to HTTPS creates a new profile that needs to synchronise again. Configure the app's Joplin Server URL as `https://192.168.1.20:8443/joplin`.
 
+## Uninstall Completely
+
+Synchronise any browser-only changes before uninstalling. Removing this frontend does not delete notes, accounts, or resources from your separate Joplin Server.
+
+First remove the imported LAN CA from **every client where you trusted it**, while you still have the exported public certificate available to identify it. On Windows, display its certificate hash:
+
+```powershell
+certutil -dump .\joplin-web-lan-root.crt
+```
+
+Use the exact `Cert Hash(sha1)` value to remove only this certificate from the current user's trusted root store:
+
+```powershell
+certutil -user -delstore Root YOUR_EXACT_CERTIFICATE_HASH
+```
+
+If you imported it into the Local Computer store instead, remove that exact certificate using `certlm.msc` with administrator permissions. Do not remove unrelated Caddy certificates. For Ubuntu clients where you followed the installation commands above:
+
+```sh
+sudo rm /usr/local/share/ca-certificates/joplin-web-lan-root.crt
+sudo update-ca-certificates
+```
+
+Browsers with their own certificate stores require removal of the matching CA there too. Public HTTPS requires no imported root cleanup.
+
+On every browser/device used with this app, remove site data for each app origin you used, including older HTTP addresses and changed hostnames or ports. In Edge DevTools, use **Application > Storage > Clear site data**, include storage and service workers, and unregister any remaining service worker under **Application > Service workers**. This removes local note copies, settings, session tokens, offline caches, and installed workers; uninstall an installed web app/PWA as well. Do not clear unrelated sites. Close the app's tabs afterwards.
+
+Then run this from the deployment repository on the Docker host:
+
+```sh
+sudo sh tools/deploy.sh uninstall --confirm
+```
+
+The confirmation flag permanently removes this Compose project's containers (including stopped alternative HTTPS services), network, named CA/config volumes, and locally built web image. It also deletes `.env`, `.env.deploy`, and `joplin-web-lan-root.crt` in this repository. The CA private key is in the deleted volume, not installed into the host by the setup command. Uninstall still works if the generated environment file is missing. Keep the same repository directory and Compose project name used for installation; renamed directories or a changed `COMPOSE_PROJECT_NAME` identify a different project.
+
+Afterwards, delete transferred/downloaded certificate copies and the repository folder if no longer needed. Any `.cache/` or `node_modules/` created during development is inside that folder. Remove only DNS/proxy/firewall rules you separately created for this app; the installer does not change host certificate stores, Docker installation, DNS, firewall rules, or system services.
+
+**Shared Docker base images and build cache are deliberately retained.** Docker can retain cached build layers after image deletion; the uninstall command does not run global prune operations because those can affect other applications. It also cannot remove remote client trust, browser data, copies/backups, shell history, or your existing Joplin Server. There is no secure-erasure guarantee for deleted files or volumes. To retain certificate trust for a reinstall, use a normal Compose stop/down without `--volumes` instead of this uninstall command.
+
 ## Connect And Review Notes
 
 1. Open the web app's settings and the Synchronisation section.

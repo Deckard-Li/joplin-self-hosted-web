@@ -28,8 +28,8 @@ describe('Self-hosted Joplin Web', () => {
 		await mkdir(join(directory, 'bin'));
 		await copyFile(new URL('./tools/deploy.sh', import.meta.url), join(directory, 'tools/deploy.sh'));
 		await writeFile(join(directory, '.env'), 'EXISTING_SETTINGS=preserved\n');
-		await writeFile(join(directory, 'bin/docker'), '#!/bin/sh\nprintf "%s|%s|%s\\n" "$*" "$WEB_DOMAIN" "$WEB_BIND" >> docker-calls\ncase " $* " in\n\t*" cp "*) printf "public-root\\n" > joplin-web-lan-root.crt ;;\nesac\n', { mode: 0o700 });
-		const run = args => spawnSync(shell, ['tools/deploy.sh', ...args], { cwd: directory, encoding: 'utf8', env: { ...process.env, PATH: `${join(directory, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`, WEB_DOMAIN: 'ambient.example.org' } });
+		await writeFile(join(directory, 'bin/docker'), '#!/bin/sh\nprintf "%s|%s|%s\\n" "$*" "$WEB_DOMAIN" "$WEB_BIND" >> docker-calls\ncase " $* " in\n\t*" cp "*) printf "public-root\\n" > joplin-web-lan-root.crt ;;\n\t*" down "*) if [ "${MOCK_DOCKER_FAIL:-}" = yes ]; then exit 1; fi ;;\nesac\n', { mode: 0o700 });
+		const run = (args, environment = {}) => spawnSync(shell, ['tools/deploy.sh', ...args], { cwd: directory, encoding: 'utf8', env: { ...process.env, PATH: `${join(directory, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`, WEB_DOMAIN: 'ambient.example.org', ...environment } });
 		for (const args of [
 			['lan', 'https://wrong-host', 'http://localhost:22300'],
 			['lan', 'localhost', 'http://user:secret@localhost:22300'],
@@ -53,6 +53,19 @@ describe('Self-hosted Joplin Web', () => {
 		assert.match(calls, /--wait --wait-timeout 180 --force-recreate web https-lan/);
 		assert.match(calls, /--force-recreate web https\|notes\.example\.com\|127\.0\.0\.1/);
 		assert.doesNotMatch(calls, /--env-file[^\n]*ambient\.example\.org|down -v/);
+		assert.equal(run(['uninstall']).status, 1);
+		assert.equal(await readFile(join(directory, 'docker-calls'), 'utf8'), calls);
+		assert.equal(run(['uninstall', '--confirm'], { MOCK_DOCKER_FAIL: 'yes' }).status, 1);
+		for (const filename of ['.env', '.env.deploy', 'joplin-web-lan-root.crt']) await access(join(directory, filename));
+		for (let attempt = 0; attempt < 2; attempt++) {
+			const result = run(['uninstall', '--confirm']);
+			assert.equal(result.status, 0, result.stderr);
+			for (const filename of ['.env', '.env.deploy', 'joplin-web-lan-root.crt']) await assert.rejects(readFile(join(directory, filename)));
+		}
+		const uninstallCalls = await readFile(join(directory, 'docker-calls'), 'utf8');
+		assert.match(uninstallCalls, /--env-file .env.deploy --profile https --profile lan-https down --volumes --rmi local --remove-orphans/);
+		assert.match(uninstallCalls, /--env-file \/dev\/null --profile https --profile lan-https down --volumes --rmi local --remove-orphans/);
+		assert.doesNotMatch(uninstallCalls, /system prune|builder prune|image prune|volume prune/);
 	});
 
 	test('proxies HTTP sync requests with path prefixes, body and session headers', async context => {

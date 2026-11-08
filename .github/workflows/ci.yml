@@ -33,6 +33,25 @@ jobs:
               cmp /tmp/joplin-web-first-root.crt ./joplin-web-lan-root.crt
             fi
           done
+      - name: Verify project-scoped uninstall leaves no deployment resources
+        run: |
+          project=$(docker compose --env-file .env.deploy config --format json | jq -r .name)
+          image=$(docker inspect --format '{{.Config.Image}}' "$(docker compose --env-file .env.deploy ps -q web)")
+          docker volume create joplin-uninstall-unrelated
+          sh tools/deploy.sh uninstall --confirm
+          test -z "$(docker ps -aq --filter "label=com.docker.compose.project=$project")"
+          test -z "$(docker volume ls -q --filter "label=com.docker.compose.project=$project")"
+          test -z "$(docker network ls -q --filter "label=com.docker.compose.project=$project")"
+          if docker image inspect "$image" >/dev/null 2>&1; then
+            echo 'The locally built deployment image remains.' >&2
+            exit 1
+          fi
+          for file in .env .env.deploy joplin-web-lan-root.crt; do
+            test ! -e "$file"
+          done
+          docker volume inspect joplin-uninstall-unrelated >/dev/null
+          docker volume rm joplin-uninstall-unrelated
+          sh tools/deploy.sh uninstall --confirm
       - name: Deployment logs
         if: failure()
         run: |
@@ -40,4 +59,7 @@ jobs:
           docker inspect --format '{{json .State.Health}}' "$(docker compose --env-file .env.deploy ps -q https-lan)"
       - name: Stop deployment
         if: always()
-        run: docker compose --env-file .env.deploy --profile lan-https down
+        run: |
+          if [ -f .env.deploy ]; then
+            sh tools/deploy.sh uninstall --confirm
+          fi

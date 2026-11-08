@@ -2,8 +2,31 @@
 set -eu
 
 usage() {
-	printf '%s\n' 'Usage: sh tools/deploy.sh lan|public HOST JOPLIN_SERVER_URL [HTTPS_PORT]' 'HOST must be a DNS hostname or IPv4 address, without a scheme or port.' 'LAN HTTPS defaults to 8443; public HTTPS uses ports 80 and 443.'
+	printf '%s\n' 'Usage: sh tools/deploy.sh lan|public HOST JOPLIN_SERVER_URL [HTTPS_PORT]' 'Uninstall: sh tools/deploy.sh uninstall --confirm' 'HOST must be a DNS hostname or IPv4 address, without a scheme or port.' 'LAN HTTPS defaults to 8443; public HTTPS uses ports 80 and 443.'
 }
+
+if [ "${1:-}" = uninstall ]; then
+	if [ "$#" -ne 2 ] || [ "$2" != --confirm ]; then
+		printf '%s\n' 'Uninstall permanently deletes this Compose project, its CA/config volumes, local web image, .env, .env.deploy, and exported root certificate.' 'First remove the imported LAN root and site data from every client. Your existing Joplin Server is not deleted.' >&2
+		usage >&2
+		exit 1
+	fi
+	cd "$(dirname "$0")/.."
+	docker compose version >/dev/null
+	docker info >/dev/null
+	env_file=.env.deploy
+	if [ ! -f "$env_file" ]; then
+		env_file=.env
+	fi
+	if [ ! -f "$env_file" ]; then
+		env_file=/dev/null
+	fi
+	export JOPLIN_SERVER_URL=http://127.0.0.1:22300
+	docker compose --env-file "$env_file" --profile https --profile lan-https down --volumes --rmi local --remove-orphans
+	rm -f .env .env.deploy joplin-web-lan-root.crt
+	printf '%s\n' 'Deployment removed. The CA private key and Caddy configuration volumes have been deleted.' 'Also remove client certificate trust, browser site data/service workers, transferred certificate copies, and the repository folder if no longer needed.' 'Shared Docker base images/build cache and your separate Joplin Server are deliberately untouched.'
+	exit 0
+fi
 
 if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
 	usage >&2
