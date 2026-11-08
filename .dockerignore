@@ -1,5 +1,7 @@
 .git
 .env
+.env.deploy
+joplin-web-lan-root.crt
 node_modules
 tools
 *.test.mjs
