@@ -2,9 +2,47 @@
 
 An unofficial, web-only deployment of the original Joplin Web App, with a same-origin proxy to your existing self-hosted Joplin Server. No desktop app, Joplin Cloud account, or native mobile project is needed. This is a deployment distribution of the upstream UI, not a rewritten note viewer. Not affiliated with Joplin or JOPLIN SAS.
 
+The note list includes a responsive, Keep-inspired card view with local content excerpts and a compact-list toggle. Opening notes, editing, selection, to-do controls, and synchronisation still use Joplin's original components and models. Locked and encrypted note bodies are not shown in previews.
+
 The official hosted web app deliberately limits sync choices on `https://app.joplincloud.com`. On your own origin, its existing Joplin Server sync target is available. This repository includes the extracted browser build, so deployment does not rebuild the Joplin monorepo.
 
 **Important:** In the web app's synchronisation settings, use the **web app URL followed by `/joplin`**, not your backend server URL. The backend can remain HTTP while the web app uses HTTPS. See [Configure Synchronisation](#configure-synchronisation) below.
+
+## Preview
+
+![Desktop note cards with content excerpts](docs/images/note-cards-desktop.png)
+
+<img src="docs/images/note-cards-mobile.png" alt="Two-column note cards on a mobile screen" width="320">
+
+Screenshots use disposable sample notes, not a real account. Cards show text excerpts without loading preview images or executing note HTML. Use the grid/list buttons to switch layouts; your choice is remembered in that browser. Click a title or excerpt to open the original editor. Existing search, notebooks, tags, and to-do controls remain available.
+
+## Quick Start
+
+You need an existing **Joplin Server account**, a Linux host with **Docker Engine and Docker Compose v2**, and Git. This installs only the web frontend, not Joplin Server. No Node.js installation or source build is required on the deployment host.
+
+For a private LAN, replace the example IP and backend address with yours:
+
+```sh
+git clone https://github.com/Deckard-Li/joplin-self-hosted-web.git
+cd joplin-self-hosted-web
+sh tools/deploy.sh lan 192.168.1.20 http://192.168.1.20:22300 8443
+```
+
+1. Trust the generated `joplin-web-lan-root.crt` on every browser device using the [certificate instructions](#one-command-https-setup). Only trust a certificate transferred securely from your own host; do not bypass browser warnings.
+2. Open **`https://192.168.1.20:8443`**, substituting your host and port. The installer prints the exact address.
+3. Open **Configuration > Synchronisation**, choose **Joplin Server**, and set its URL to **`https://192.168.1.20:8443/joplin`**, not the backend URL. Enter your existing account credentials and synchronise.
+4. Your notebooks and notes appear after sync. The card view is enabled by default.
+
+Use `sudo sh` if your Linux user does not have Docker access. Allow your chosen HTTPS port through the host firewall; the installer does not change firewall rules. The backend must be reachable from inside Docker. For public HTTPS without certificate imports, see [One-command HTTPS Setup](#one-command-https-setup).
+
+To update an existing installer-managed deployment without deleting notes or certificate trust:
+
+```sh
+git pull --ff-only
+sh tools/deploy.sh lan 192.168.1.20 http://192.168.1.20:22300 8443
+```
+
+Use the same host, port, and deployment mode as before; public deployments should rerun their `public` command instead. Keep `caddy_data` and do not uninstall before updating. Reload the web app after the update; changing its origin creates a separate browser-local profile.
 
 ## Deploy With Docker
 
@@ -158,7 +196,7 @@ Open `http://localhost:8080`. On Linux/macOS, use `JOPLIN_SERVER_URL=http://192.
 
 ## Development And Upstream
 
-Run `npm ci` and `npm test` to test the web host, HTTP proxy, worker assets, and extraction hashes. `node tools/extract-web.mjs` refreshes browser assets from the official deployment; review and commit `web/` and `upstream-assets.json` together. Extraction parses HTML and JavaScript to discover runtime assets and records hashes. The compiled application JavaScript is preserved; page titles, manifest branding, and restricted app icons are replaced, and development mode remains disabled. On Windows behind an enterprise HTTPS proxy, `node --use-system-ca tools/extract-web.mjs` uses trusted system certificates without disabling TLS checks. Delete the ignored `.cache/upstream/` directory before refreshing to a new upstream release.
+Run `npm ci` and `npm test` to test the web host, HTTP proxy, protected previews, worker assets, and extraction hashes. `node tools/extract-web.mjs` refreshes browser assets from the official deployment and automatically reapplies the checked card-view customization; review and commit `web/` and `upstream-assets.json` together. Extraction parses HTML and JavaScript to discover runtime assets and records original/resulting hashes. One pinned addition to the application bundle's note-list renderer loads the included card script; worker bundles remain unchanged. Page titles, manifest branding, restricted app icons, and the web bootstrap are adapted, and development mode remains disabled. After editing `web/note-cards.js` or `web/note-cards.css`, run `node tools/customize-note-list.mjs` to refresh asset hashes. On Windows behind an enterprise HTTPS proxy, `node --use-system-ca tools/extract-web.mjs` uses trusted system certificates without disabling TLS checks. Delete the ignored `.cache/upstream/` directory before refreshing to a new upstream release; changed upstream module anchors require review, not a blind patch.
 
 Upstream application source and build instructions: [laurent22/joplin](https://github.com/laurent22/joplin), especially `packages/app-mobile`, `packages/lib`, `packages/editor`, and `packages/renderer`. The original app is documented at [Joplin Web App](https://joplinapp.org/help/apps/web/). See `SOURCES.md` for the exact corresponding source revision, `NOTICE.md` for licensing and extraction scope, and `VERIFICATION.md` for completed and unverified checks.
 

@@ -8,14 +8,14 @@
 		{
 			"path": "index.html",
 			"sourceSha256": "37569fae61781d088eb7040f4ec6255a4d3cd414f74a2475938b0b545292e863",
-			"sha256": "f199ef59e5eb633e32c7b30bd45ecd0e490855e5816bc70876308c9622b6a5a3",
-			"bytes": 1666
+			"sha256": "866cfd0eadff8013355cdee6e96ee3205cdca1db57ff2838da5db7380b2fb6cf",
+			"bytes": 1766
 		},
 		{
 			"path": "environment.js",
 			"sourceSha256": "0bc4977ab9eaf2fdf022a93338f14d81ecb61edbdfde90c13e8dafd8adf26c22",
-			"sha256": "a009f1e71d710e52543f25211d641c64d4144d4b60cda6c5d487caf69a1e2b46",
-			"bytes": 313
+			"sha256": "780c30ab52167625aee0476453a1518edefb5824b0ed695e121d64c4b5c3c240",
+			"bytes": 331
 		},
 		{
 			"path": "serviceWorker.bundle.js",
@@ -26,8 +26,8 @@
 		{
 			"path": "app.bundle.js",
 			"sourceSha256": "98cf0e72865d2002578c93594880ae2a0a1f5efda00855551aa80ab4f72dc86e",
-			"sha256": "98cf0e72865d2002578c93594880ae2a0a1f5efda00855551aa80ab4f72dc86e",
-			"bytes": 18869899
+			"sha256": "328b1982be45657f50a43b762dc9789a992b33ea886a61b7c887cdc6724a4738",
+			"bytes": 18870052
 		},
 		{
 			"path": "index.css",
@@ -178,6 +178,21 @@
 			"sourceSha256": "32acbbbcf9133c94409c7f982c93572e16b2daddefdd9db99554c3a2612986aa",
 			"sha256": "32acbbbcf9133c94409c7f982c93572e16b2daddefdd9db99554c3a2612986aa",
 			"bytes": 255
+		}
+	],
+	"customizations": [
+		"Local note cards with excerpts and a compact-list toggle"
+	],
+	"localAssets": [
+		{
+			"path": "note-cards.js",
+			"sha256": "109d7fbe23a65a360ac84e61da4a35c049692bf91882abcbc9e5220505cf0be4",
+			"bytes": 4576
+		},
+		{
+			"path": "note-cards.css",
+			"sha256": "69091321d266af12a9aa5b07b9a59ba395c05546468b04c1bbcb0e1779c60eed",
+			"bytes": 3531
 		}
 	]
 }

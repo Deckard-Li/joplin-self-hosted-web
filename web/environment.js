@@ -6,6 +6,7 @@ window.exports = {};
 
 // Expo libraries expect window.process variable to be defined.
 window.process = {
+	platform: 'web',
 	env: {
 		EXPO_OS: 'web',
 	},

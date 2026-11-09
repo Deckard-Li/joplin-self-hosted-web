@@ -1,5 +1,20 @@
 # Verification
 
+## Note Cards
+
+Validated locally on 2026-11-09 with Node.js 24.19.0 and the integrated Playwright browser:
+
+- Seven host/regression tests pass, including protected-preview checks, pinned upstream module validation, idempotent HTML/bootstrap adaptation, and hashes for both upstream and local assets. Removing the single note-list bridge restores the original application bundle's source hash.
+- Original app starts with the explicit web platform stub. Card view shows Markdown and HTML excerpts from the browser-local note database; compact mode hides excerpts and persists after reload.
+- Clicking a to-do excerpt opens the original editor without completing the task. The original checkbox persists completion without opening the editor. Back navigation restores the card view.
+- A locked fixture displays "Locked note" without exposing its body. An HTML fixture's script never executes and its image URL is never requested by the preview.
+- Desktop 1440x900, mobile 390x844, and narrow mobile 320x740 have no horizontal overflow. Desktop/mobile screenshots were captured with isolated, disposable local sample notes. Secure context and cross-origin isolation are enabled at the localhost preview.
+- `tools/extract-web.mjs` passes syntax checking and automatically invokes the checked customization tool. The current assets pass customization/hash validation; a fresh upstream network extraction was not rerun for this UI-only change.
+
+This UI validation uses no real account or backend credentials. Live sync with the customized UI and CI for these local changes are not verified; the original sync engine and proxy behavior are unchanged. The startup sync-provider dialog must be dismissed in an unconfigured preview profile.
+
+## Original Deployment
+
 Validated locally on 2026-11-08 with Node.js 24.19.0:
 
 - `npm test`: four tests passed. Covered HTTP backend forwarding, reverse-proxy prefixes, request bodies and session headers, rejection of foreign/malformed origins, upstream failures, static asset isolation, worker delivery, WASM MIME type, and SHA-256 verification of extracted assets.

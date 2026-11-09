@@ -6,7 +6,9 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { runInNewContext } from 'node:vm';
 import { createWebServer } from './server.mjs';
+import { customizeEnvironment, customizeIndex, customizeNoteList, noteListBridge } from './tools/customize-note-list.mjs';
 
 const listen = async server => {
 	await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -14,6 +16,53 @@ const listen = async server => {
 };
 
 describe('Self-hosted Joplin Web', () => {
+	test('customizes only the original note-list renderer and rejects changed upstream anchors', async () => {
+		const bundle = await readFile(new URL('./web/app.bundle.js', import.meta.url), 'utf8');
+		const original = bundle.replace(noteListBridge, '');
+		const manifest = JSON.parse(await readFile(new URL('./upstream-assets.json', import.meta.url), 'utf8'));
+		assert.equal(createHash('sha256').update(original).digest('hex'), manifest.files.find(file => file.path === 'app.bundle.js').sourceSha256);
+		assert.equal(customizeNoteList(original), bundle);
+		assert.equal(customizeNoteList(bundle), bundle);
+		assert.throws(() => customizeNoteList(original.replace('You currently have no notebooks.', 'Upstream anchor changed.')), /module changed/);
+		assert.throws(() => customizeNoteList(original.replace('e.name.match', 'e.label.match')), /icon module changed/);
+		const index = await readFile(new URL('./web/index.html', import.meta.url), 'utf8');
+		assert.ok(index.indexOf('./note-cards.js') < index.indexOf('./app.bundle.js'));
+		assert.equal(customizeIndex(index), index);
+		assert.match(customizeIndex('<html><head></head><body><script src="./app.bundle.js"></script></body></html>'), /note-cards\.css/);
+		assert.throws(() => customizeIndex('<html><head></head><body></body></html>'), /HTML changed/);
+		assert.match(customizeEnvironment("window.process = { env: { EXPO_OS: 'web' } };"), /platform: 'web'/);
+		assert.throws(() => customizeEnvironment('window.exports = {};'), /bootstrap changed/);
+	});
+
+	test('never loads encrypted previews or parses protected local note bodies', async () => {
+		const source = await readFile(new URL('./web/note-cards.js', import.meta.url), 'utf8');
+		for (const protection of ['encrypted', 'locked', 'loadedLocked']) {
+			const window = {};
+			const effects = [];
+			const updates = [];
+			let loads = 0;
+			let parserCalls = 0;
+			const react = {
+				createElement: (type, props, ...children) => ({ type, props, children }),
+				useState: initial => [typeof initial === 'function' ? initial() : initial, value => updates.push(value)],
+				useEffect: effect => effects.push(effect),
+			};
+			const model = { load: async () => { loads++; return { body: 'PROTECTED_BODY', is_locked: 1 }; } };
+			const markdown = function() { parserCalls++; throw new Error('Protected previews must not be parsed'); };
+			runInNewContext(source, { window, localStorage: { getItem: () => null } });
+			const note = { id: 'protected-note', encryption_applied: protection === 'encrypted' ? 1 : 0, is_locked: protection === 'locked' ? 1 : 0 };
+			const list = window.JoplinNoteCards.list(react, 'upstream-item', model, 'upstream-icon', markdown, { items: [note] });
+			const rendered = list.type(list.props);
+			const card = rendered.children[1].children[0];
+			card.type(card.props);
+			for (const effect of effects) effect();
+			await new Promise(resolve => setImmediate(resolve));
+			assert.equal(loads, protection === 'loadedLocked' ? 1 : 0);
+			assert.equal(parserCalls, 0);
+			assert.ok(!updates.includes('PROTECTED_BODY'));
+		}
+	});
+
 	test('deploys portable HTTPS settings and rejects unsafe installer inputs', async context => {
 		const shell = process.platform === 'win32' ? join(process.env.ProgramFiles || 'C:/Program Files', 'Git/bin/sh.exe') : '/bin/sh';
 		try {
@@ -116,7 +165,7 @@ describe('Self-hosted Joplin Web', () => {
 
 	test('serves the original frontend, workers and WASM with verified asset hashes', async context => {
 		const assets = JSON.parse(await readFile(new URL('./upstream-assets.json', import.meta.url), 'utf8'));
-		for (const asset of assets.files) {
+		for (const asset of [...assets.files, ...(assets.localAssets || [])]) {
 			const bytes = await readFile(new URL(`./web/${asset.path}`, import.meta.url));
 			assert.equal(createHash('sha256').update(bytes).digest('hex'), asset.sha256, asset.path);
 		}

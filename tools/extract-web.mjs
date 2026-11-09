@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 
 const source = 'https://app.joplincloud.com/';
 const root = fileURLToPath(new URL('../web/', import.meta.url));
@@ -145,4 +146,5 @@ if (!commitResponse.ok) throw new Error(`Cannot resolve upstream source revision
 const commit = await commitResponse.json();
 if (!commit.sha.startsWith(revision)) throw new Error('Upstream revision does not match the resolved source commit.');
 await writeFile(fileURLToPath(new URL('../upstream-assets.json', import.meta.url)), `${JSON.stringify({ source, upstreamVersion: [...versions][0], upstreamRevision: commit.sha, sourceUrl: `https://github.com/laurent22/joplin/tree/${commit.sha}`, extractedAt: new Date().toISOString(), files: records }, null, '\t')}\n`);
-console.log(`Extracted ${records.length} assets. Original JavaScript bundles were not modified.`);
+execFileSync(process.execPath, [fileURLToPath(new URL('./customize-note-list.mjs', import.meta.url))], { stdio: 'inherit' });
+console.log(`Extracted ${records.length} assets and reapplied the checked note-card customization.`);
