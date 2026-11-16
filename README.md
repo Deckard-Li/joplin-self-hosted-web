@@ -16,6 +16,8 @@ The official hosted web app deliberately limits sync choices on `https://app.jop
 
 Screenshots use disposable sample notes, not a real account. Cards show text excerpts without loading preview images or executing note HTML. Use the grid/list buttons to switch layouts; your choice is remembered in that browser. Click a title or excerpt to open the original editor. Existing search, notebooks, tags, and to-do controls remain available.
 
+Each card has a tag button and an emoji button, also available in compact-list mode. Both open **Note details**: add existing or new tags, remove tags, insert emoji into the note title, or select/reset the parent notebook's emoji. **Apply** saves changes; **Cancel** discards them. Notebook icons use the desktop app's format, and the searchable emoji picker uses the same library as desktop, bundled locally without a CDN. Notes have no separate icon field: their emoji is ordinary title text. Changing a notebook emoji affects the whole notebook, not just one note. In the original note editor, **Tags** is also available in the overflow menu. Changes stay browser-local until synchronisation runs.
+
 ## Quick Start
 
 You need an existing **Joplin Server account**, a Linux host with **Docker Engine and Docker Compose v2**, and Git. This installs only the web frontend, not Joplin Server. No Node.js installation or source build is required on the deployment host.

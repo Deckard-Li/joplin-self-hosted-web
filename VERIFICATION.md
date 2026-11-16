@@ -1,5 +1,15 @@
 # Verification
 
+## Emoji And Tags
+
+Validated locally on 2026-11-16 with Node.js 24.19.0 and the integrated Playwright browser:
+
+- The original note editor already includes Tags in its overflow menu. Desktop provides a notebook emoji picker, not a separate note-icon field. The local card controls now expose tags, note-title emoji, and notebook emoji directly.
+- Original Joplin models persisted a new tag, title emoji, and notebook emoji in the browser database. Reopening and reloading retained them; the sidebar and notebook heading updated. Tag removal and notebook icon reset also persisted. Cancel did not save edited text.
+- The locally bundled desktop emoji picker opened and searched without a CDN. Escape hid the picker without closing the parent dialog, and mobile overlays were removed. The dialog fit desktop 1440px and mobile 390px/320px widths; a settled picker at 320px measured 258px wide without clipping.
+- Model regression coverage checks title/tag/icon persistence without body changes, locked/encrypted/deleted/read-only rejection, stale tag changes, and read-only notebook icons. Pinned upstream source identity remains verifiable after removing both render-bridge statements.
+- Docker is unavailable locally. No real account or backend credentials were used; live-server synchronisation and deployment CI have not been verified for this change. The original sync engine and same-origin proxy remain unchanged.
+
 ## Note Cards
 
 Validated locally on 2026-11-09 with Node.js 24.19.0 and the integrated Playwright browser:

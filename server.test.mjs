@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { createWebServer } from './server.mjs';
-import { customizeEnvironment, customizeIndex, customizeNoteList, noteListBridge } from './tools/customize-note-list.mjs';
+import { customizeEnvironment, customizeIndex, customizeNoteList, noteListBridge, metadataBridge } from './tools/customize-note-list.mjs';
 
 const listen = async server => {
 	await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -18,13 +18,14 @@ const listen = async server => {
 describe('Self-hosted Joplin Web', () => {
 	test('customizes only the original note-list renderer and rejects changed upstream anchors', async () => {
 		const bundle = await readFile(new URL('./web/app.bundle.js', import.meta.url), 'utf8');
-		const original = bundle.replace(noteListBridge, '');
+		const original = bundle.replace(noteListBridge, '').replace(metadataBridge, '');
 		const manifest = JSON.parse(await readFile(new URL('./upstream-assets.json', import.meta.url), 'utf8'));
 		assert.equal(createHash('sha256').update(original).digest('hex'), manifest.files.find(file => file.path === 'app.bundle.js').sourceSha256);
 		assert.equal(customizeNoteList(original), bundle);
 		assert.equal(customizeNoteList(bundle), bundle);
 		assert.throws(() => customizeNoteList(original.replace('You currently have no notebooks.', 'Upstream anchor changed.')), /module changed/);
 		assert.throws(() => customizeNoteList(original.replace('e.name.match', 'e.label.match')), /icon module changed/);
+		assert.throws(() => customizeNoteList(original.replace('key:"setNoteTagsByTitles"', 'key:"changedTagMethod"')), /tag model changed/);
 		const index = await readFile(new URL('./web/index.html', import.meta.url), 'utf8');
 		assert.ok(index.indexOf('./note-cards.js') < index.indexOf('./app.bundle.js'));
 		assert.equal(customizeIndex(index), index);
@@ -61,6 +62,42 @@ describe('Self-hosted Joplin Web', () => {
 			assert.equal(parserCalls, 0);
 			assert.ok(!updates.includes('PROTECTED_BODY'));
 		}
+	});
+
+	test('uses original models for metadata, preserves bodies, and rejects protected or stale edits', async () => {
+		const source = await readFile(new URL('./web/note-cards.js', import.meta.url), 'utf8');
+		const window = {};
+		runInNewContext(source, { window });
+		let note = { id: 'note', title: 'Title', body: 'Unchanged body', parent_id: 'folder', share_id: '', deleted_time: 0 };
+		let folder = { id: 'folder', title: 'Notebook', icon: '', share_id: '', deleted_time: 0 };
+		let tags = [{ id: 'tag', title: 'Existing' }];
+		const writes = [];
+		const model = { load: async () => ({ ...note }), save: async value => { writes.push(value); note = { ...note, ...value }; } };
+		const folders = { load: async () => ({ ...folder }), save: async value => { writes.push(value); folder = { ...folder, ...value }; } };
+		const tagModel = { tagsByNoteId: async () => tags.map(tag => ({ ...tag })), all: async () => tags, setNoteTagsByTitles: async (id, titles) => { writes.push({ noteId: id, tags: [...titles] }); tags = titles.map(title => ({ title })); } };
+		window.JoplinNoteCards.models(tagModel, folders, () => component => component, (type, source, entity) => !!entity.readOnly);
+		const context = {};
+		const original = await window.JoplinNoteCards.metadata.load(model, 'note', context);
+		const changes = { title: '\u{1F600} Title', tags: ['New'], folderIcon: '{"type":1,"emoji":"\ud83d\ude00","name":"grinning","dataUrl":""}' };
+		await window.JoplinNoteCards.metadata.save(model, original, changes, context);
+		assert.equal(note.body, 'Unchanged body');
+		assert.equal(note.title, changes.title);
+		assert.equal(folder.icon, changes.folderIcon);
+		assert.deepEqual(tags, [{ title: 'New' }]);
+		assert.equal(writes.length, 3);
+		for (const flag of ['encryption_applied', 'is_locked', 'deleted_time', 'readOnly']) {
+			note[flag] = 1;
+			await assert.rejects(window.JoplinNoteCards.metadata.load(model, 'note', context), /read-only/);
+			await assert.rejects(window.JoplinNoteCards.metadata.save(model, original, changes, context), /read-only/);
+			delete note[flag];
+		}
+		const latest = await window.JoplinNoteCards.metadata.load(model, 'note', context);
+		tags = [{ title: 'Concurrent tag' }];
+		await assert.rejects(window.JoplinNoteCards.metadata.save(model, latest, changes, context), /changed elsewhere/);
+		tags = latest.tags;
+		folder.readOnly = true;
+		await assert.rejects(window.JoplinNoteCards.metadata.save(model, latest, { ...changes, folderIcon: '' }, context), /read-only/);
+		assert.equal(writes.length, 3);
 	});
 
 	test('deploys portable HTTPS settings and rejects unsafe installer inputs', async context => {

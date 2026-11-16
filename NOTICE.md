@@ -7,3 +7,5 @@ The upstream application bundle has one reproducible, AST-checked addition to it
 Joplin is a trademark of JOPLIN SAS. The original Joplin logos and app icons have a separate restricted license and are not granted by the AGPL. This distribution replaces its standalone web app icons with an independently created document icon. Other third-party notices are retained alongside their bundled JavaScript.
 
 See `SOURCES.md` for the immutable corresponding source of the included browser build and source download links. See `VERIFICATION.md` for tested behavior and remaining deployment checks.
+
+The local metadata controls bundle `@joeattardi/emoji-button` 4.6.4, the MIT-licensed picker also used by Joplin Desktop. Its source is at https://github.com/joeattardi/emoji-button/tree/v4.6.4. Picker and dependency notices are included in `web/emoji-picker.LICENSE.txt`; versions are pinned by `package-lock.json`. The native emoji rendering mode is used, not remotely hosted Twemoji images.
