@@ -109,7 +109,14 @@
 .note-metadata-dialog footer button[type="submit"] { background: #167d61; color: #fff; }
 .note-metadata-dialog [role="alert"] { color: #a22121; overflow-wrap: anywhere; }
 .note-metadata-dialog :focus-visible, .note-card-actions button:focus-visible { outline: 2px solid #167d61; outline-offset: 2px; }
-.note-metadata-dialog .emoji-picker__search { min-width: 0; box-sizing: border-box; }
+.emoji-picker__search { min-width: 0; box-sizing: border-box; }
+.notebook-emoji-editor, .tags-create-toolbar { font-family: 'Avenir Next', 'Segoe UI', sans-serif; }
+.notebook-emoji-editor { display: flex; flex-wrap: wrap; align-items: center; flex-shrink: 0; gap: 8px; padding: 12px 14px; }
+.notebook-emoji-preview { display: grid; place-items: center; width: 40px; height: 40px; font-size: 28px; }
+.notebook-emoji-editor > button, .tags-create-toolbar > button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; max-width: 100%; padding: 6px 10px; border: 1px solid #bbc9c0; border-radius: 4px; background: #fff; color: #24332b; font: inherit; cursor: pointer; }
+.notebook-emoji-editor > button:disabled { opacity: .45; cursor: default; }
+.tags-create-toolbar { flex-shrink: 0; padding: 8px 14px; }
+.notebook-emoji-editor > button:focus-visible, .tags-create-toolbar > button:focus-visible { outline: 2px solid #167d61; outline-offset: 2px; }
 @media (max-width: 520px) {
 	.note-cards-toolbar { padding: 8px 12px; }
 	.note-cards-grid { padding: 12px; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }

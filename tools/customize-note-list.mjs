@@ -19,6 +19,50 @@ const walk = (node, callback) => {
 
 export const noteListBridge = 'if(this.props.items.length&&window.JoplinNoteCards)return window.JoplinNoteCards.list(m,O.default,n(98800).default,n(94467).default,n(20580),this.props);';
 export const metadataBridge = 'window.JoplinNoteCards.models(n(12682).default,n(66532).default,n(1290).connect,n(17592).itemIsReadOnlySync);';
+export const folderBridge = 'window.JoplinNoteCards.folder(y,JoplinNotebookIcon,k.default,this),';
+export const tagsBridge = 'window.JoplinNoteCards.tags(d,JoplinTagsIcon,f.default,function(){D("");h(function(e){return e+1})}),';
+export const screenImports = ['var JoplinNotebookIcon=n(94467).default;', 'var JoplinTagsIcon=n(94467).default;'];
+export const tagQueries = [
+	['t=yield f.default.searchAllWithNotes({titlePattern:n})}else t=yield f.default.allWithNotes();t.sort', 't=yield f.default.search({titlePattern:n})}else t=yield f.default.all();t.sort'],
+];
+
+export const customizeScreens = source => {
+	if (source.includes(folderBridge) && source.includes(tagsBridge)) return source;
+	source = source.replace(folderBridge, '').replace(tagsBridge, '');
+	for (const code of screenImports) source = source.replace(code, '');
+	for (const [original, replacement] of tagQueries) source = source.replace(replacement, original);
+	const positions = [];
+	const imports = [];
+	let tagModule;
+	walk(parse(source, { ecmaVersion: 'latest' }), node => {
+		if (node.type === 'Property' && node.key.value === 75677) tagModule = node;
+		if (node.type !== 'Property' || node.key.value !== 48032) return;
+		imports.push({ position: node.value.body.body[0].end, code: screenImports[0] });
+		if (!source.slice(node.start, node.end).includes('Edit notebook')) throw new Error('Upstream notebook editor changed.');
+		walk(node.value.body, nested => {
+			if (nested.type !== 'CallExpression' || nested.callee.type !== 'MemberExpression' || nested.callee.property.name !== 'createElement') return;
+			if (nested.arguments[0]?.type !== 'MemberExpression' || nested.arguments[0].object.name !== 'C' || nested.arguments[0].property.name !== 'default') return;
+			positions.push({ position: nested.end + 1, code: folderBridge });
+		});
+	});
+	if (positions.length !== 1) throw new Error('Expected one notebook title input.');
+	if (!tagModule || !source.slice(tagModule.start, tagModule.end).includes('Search tags')) throw new Error('Upstream tags screen changed.');
+	imports.push({ position: tagModule.value.body.body[0].end, code: screenImports[1] });
+	walk(tagModule.value.body, node => {
+		if (node.type !== 'CallExpression' || node.callee.type !== 'MemberExpression' || node.callee.property.name !== 'createElement') return;
+		if (node.arguments[0]?.type !== 'MemberExpression' || node.arguments[0].object.name !== 'g' || node.arguments[0].property.name !== 'ScreenHeader') return;
+		positions.push({ position: node.end + 1, code: tagsBridge });
+	});
+	if (positions.length !== 2) throw new Error('Expected one tags header.');
+	let output = source;
+	for (const { position, code } of [...positions, ...imports].sort((left, right) => right.position - left.position)) output = `${output.slice(0, position)}${code}${output.slice(position)}`;
+	for (const [original, replacement] of tagQueries) {
+		if (!output.includes(original)) throw new Error('Upstream tag queries changed.');
+		output = output.replace(original, replacement);
+	}
+	parse(output, { ecmaVersion: 'latest' });
+	return output;
+};
 
 export const customizeNoteList = source => {
 	const marker = 'window.JoplinNoteCards.list';
@@ -97,7 +141,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 	const record = manifest.files.find(file => file.path === 'app.bundle.js');
 	if (createHash('sha256').update(source).digest('hex') !== record.sha256) throw new Error('The application bundle does not match its recorded hash.');
 	const outputs = new Map([
-		['app.bundle.js', customizeNoteList(source)],
+		['app.bundle.js', customizeScreens(customizeNoteList(source))],
 		['index.html', customizeIndex(await readFile(new URL('../web/index.html', import.meta.url), 'utf8'))],
 		['environment.js', customizeEnvironment(await readFile(new URL('../web/environment.js', import.meta.url), 'utf8'))],
 	]);
@@ -135,7 +179,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 		if (path.endsWith('.js')) parse(bytes.toString('utf8'), { ecmaVersion: 'latest' });
 		manifest.localAssets.push({ path, sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length });
 	}
-	manifest.customizations = ['Local note cards with excerpts and a compact-list toggle', 'Note title emoji, desktop-compatible notebook emoji, and note tag editing'];
+	manifest.customizations = ['Local note cards with excerpts and a compact-list toggle', 'Notebook editor emoji picker, New tag on Tags screen, and note tag editing'];
 	await writeFile(manifestUrl, `${JSON.stringify(manifest, null, '\t')}\n`);
 	console.log('Customized and syntax-checked the upstream note list; recorded output hashes.');
 }

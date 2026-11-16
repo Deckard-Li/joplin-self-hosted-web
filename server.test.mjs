@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { createWebServer } from './server.mjs';
-import { customizeEnvironment, customizeIndex, customizeNoteList, noteListBridge, metadataBridge } from './tools/customize-note-list.mjs';
+import { customizeEnvironment, customizeIndex, customizeNoteList, customizeScreens, noteListBridge, metadataBridge, folderBridge, tagsBridge, tagQueries, screenImports } from './tools/customize-note-list.mjs';
 
 const listen = async server => {
 	await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -16,13 +16,18 @@ const listen = async server => {
 };
 
 describe('Self-hosted Joplin Web', () => {
-	test('customizes only the original note-list renderer and rejects changed upstream anchors', async () => {
+	test('customizes pinned note and notebook/tag screens and rejects changed upstream anchors', async () => {
 		const bundle = await readFile(new URL('./web/app.bundle.js', import.meta.url), 'utf8');
-		const original = bundle.replace(noteListBridge, '').replace(metadataBridge, '');
+		let original = bundle.replace(noteListBridge, '').replace(metadataBridge, '').replace(folderBridge, '').replace(tagsBridge, '');
+		for (const code of screenImports) original = original.replace(code, '');
+		for (const [before, after] of tagQueries) original = original.replace(after, before);
 		const manifest = JSON.parse(await readFile(new URL('./upstream-assets.json', import.meta.url), 'utf8'));
 		assert.equal(createHash('sha256').update(original).digest('hex'), manifest.files.find(file => file.path === 'app.bundle.js').sourceSha256);
-		assert.equal(customizeNoteList(original), bundle);
+		assert.equal(customizeScreens(customizeNoteList(original)), bundle);
 		assert.equal(customizeNoteList(bundle), bundle);
+		assert.equal(customizeScreens(bundle), bundle);
+		assert.throws(() => customizeScreens(original.replace('Edit notebook', 'Changed editor')), /notebook editor changed/);
+		assert.throws(() => customizeScreens(original.replaceAll('"Search tags"', '"Changed tags"')), /tags screen changed/);
 		assert.throws(() => customizeNoteList(original.replace('You currently have no notebooks.', 'Upstream anchor changed.')), /module changed/);
 		assert.throws(() => customizeNoteList(original.replace('e.name.match', 'e.label.match')), /icon module changed/);
 		assert.throws(() => customizeNoteList(original.replace('key:"setNoteTagsByTitles"', 'key:"changedTagMethod"')), /tag model changed/);
@@ -64,7 +69,7 @@ describe('Self-hosted Joplin Web', () => {
 		}
 	});
 
-	test('uses original models for metadata, preserves bodies, and rejects protected or stale edits', async () => {
+	test('edits note tags without title or body changes and rejects protected or stale edits', async () => {
 		const source = await readFile(new URL('./web/note-cards.js', import.meta.url), 'utf8');
 		const window = {};
 		runInNewContext(source, { window });
@@ -78,13 +83,13 @@ describe('Self-hosted Joplin Web', () => {
 		window.JoplinNoteCards.models(tagModel, folders, () => component => component, (type, source, entity) => !!entity.readOnly);
 		const context = {};
 		const original = await window.JoplinNoteCards.metadata.load(model, 'note', context);
-		const changes = { title: '\u{1F600} Title', tags: ['New'], folderIcon: '{"type":1,"emoji":"\ud83d\ude00","name":"grinning","dataUrl":""}' };
+		const changes = { tags: ['New'] };
 		await window.JoplinNoteCards.metadata.save(model, original, changes, context);
 		assert.equal(note.body, 'Unchanged body');
-		assert.equal(note.title, changes.title);
-		assert.equal(folder.icon, changes.folderIcon);
+		assert.equal(note.title, 'Title');
+		assert.equal(folder.icon, '');
 		assert.deepEqual(tags, [{ title: 'New' }]);
-		assert.equal(writes.length, 3);
+		assert.equal(writes.length, 1);
 		for (const flag of ['encryption_applied', 'is_locked', 'deleted_time', 'readOnly']) {
 			note[flag] = 1;
 			await assert.rejects(window.JoplinNoteCards.metadata.load(model, 'note', context), /read-only/);
@@ -94,10 +99,18 @@ describe('Self-hosted Joplin Web', () => {
 		const latest = await window.JoplinNoteCards.metadata.load(model, 'note', context);
 		tags = [{ title: 'Concurrent tag' }];
 		await assert.rejects(window.JoplinNoteCards.metadata.save(model, latest, changes, context), /changed elsewhere/);
-		tags = latest.tags;
-		folder.readOnly = true;
-		await assert.rejects(window.JoplinNoteCards.metadata.save(model, latest, { ...changes, folderIcon: '' }, context), /read-only/);
-		assert.equal(writes.length, 3);
+		assert.equal(writes.length, 1);
+	});
+
+	test('creates unassigned tags through the original model and rejects blank or duplicate names', async () => {
+		const window = {};
+		runInNewContext(await readFile(new URL('./web/note-cards.js', import.meta.url), 'utf8'), { window });
+		const saved = [];
+		const model = { loadByTitle: async title => saved.find(tag => tag.title.toLowerCase() === title.toLowerCase()), save: async (tag, options) => { assert.equal(options.userSideValidation, true); saved.push(tag); return tag; } };
+		assert.equal((await window.JoplinNoteCards.createTag(model, '  Research  ')).title, 'Research');
+		await assert.rejects(window.JoplinNoteCards.createTag(model, 'research'), /already exists/);
+		await assert.rejects(window.JoplinNoteCards.createTag(model, '   '), /tag name/);
+		assert.equal(saved.length, 1);
 	});
 
 	test('deploys portable HTTPS settings and rejects unsafe installer inputs', async context => {

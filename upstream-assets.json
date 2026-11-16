@@ -26,8 +26,8 @@
 		{
 			"path": "app.bundle.js",
 			"sourceSha256": "98cf0e72865d2002578c93594880ae2a0a1f5efda00855551aa80ab4f72dc86e",
-			"sha256": "0b884a96fc7fd3c6a7742fca368c71f6e6da8e4cac8d11c0e89facea80d7901d",
-			"bytes": 18870161
+			"sha256": "0d64cf95ccac952fc645a6a2209a5fe09ffb51f3f509f825aee40a577834864e",
+			"bytes": 18870384
 		},
 		{
 			"path": "index.css",
@@ -182,18 +182,18 @@
 	],
 	"customizations": [
 		"Local note cards with excerpts and a compact-list toggle",
-		"Note title emoji, desktop-compatible notebook emoji, and note tag editing"
+		"Notebook editor emoji picker, New tag on Tags screen, and note tag editing"
 	],
 	"localAssets": [
 		{
 			"path": "note-cards.js",
-			"sha256": "11036f1ef6f20f5a12ed0ee942e90e28ab30603521e6510c01117dea9fb431b3",
-			"bytes": 13593
+			"sha256": "6eb9bf27d00c4e94b7e1048e1fd09b5cb6bb9a88a6750209830a2f79ab40190e",
+			"bytes": 14441
 		},
 		{
 			"path": "note-cards.css",
-			"sha256": "8ac8ee3e10461153d837e600e38ac70bb92d4fb91a758594b3134ae409998deb",
-			"bytes": 5907
+			"sha256": "c2b13f30fd58419c370a2ef116bb863f7b8e451c36f90196e6e168db8bcd6638",
+			"bytes": 6812
 		},
 		{
 			"path": "emoji-picker.js",
